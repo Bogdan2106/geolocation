@@ -66,7 +66,7 @@ class Chat extends ExtendedActiveRecord
     public function attributeLabels()
     {
         return [
-            'id' => 'ID',
+            'room_id' => 'ID',
             'name' => 'Name',
             'status' => 'Status',
             'user_id' => 'User ID',
@@ -80,8 +80,15 @@ class Chat extends ExtendedActiveRecord
     public static function allFields($result)
     {
         return self::responseAll($result, [
-            'id',
-            'user',
+            'room_id',
+            //'user',
+        ]);
+    }
+
+    public static function roomFields($result)
+    {
+        return self::responseAll($result, [
+            'room_id',
         ]);
     }
 

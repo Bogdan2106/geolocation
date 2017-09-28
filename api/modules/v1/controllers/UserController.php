@@ -37,7 +37,6 @@ class UserController extends ActiveController
             'rules' => [
                 [
                     'actions' => [
-                        'test',
                         'all',
                         'add-courier',
                         'delete-courier',
@@ -80,8 +79,7 @@ class UserController extends ActiveController
                 'get-coordinates' => ['GET'],
                 'get-couriers' => ['GET'],
                 'add-courier' => ['GET'],
-                'delete-courier' => ['DELETE'],
-                'test' => ['GET'],
+                'delete-courier' => ['GET'],
                 'all-users' => ['GET'],
                 'one-user' => ['GET'],
                 'info-user' => ['GET'],
@@ -89,13 +87,6 @@ class UserController extends ActiveController
         ];
 
         return $behaviors;
-    }
-
-    public function actionTest()
-    {
-
-        echo 'this is test blead';
-        exit;
     }
 
     public function actionAll()
@@ -159,7 +150,6 @@ class UserController extends ActiveController
                 return ['errors' => $model->errors];
             }
         }
-
         // create chat
         $chat = Chat::find()->where(['or',
             [
@@ -181,7 +171,6 @@ class UserController extends ActiveController
                 return ['errors' => $chat->errors];
             }
         }
-
         return true;
     }
 
@@ -312,7 +301,6 @@ class UserController extends ActiveController
 //            ->leftJoin(['lat' => Coordinates::tableName()], 'lat.' )
 //            ->column();
 //    }
-
 
 //    protected function findModel($id)
 //    {

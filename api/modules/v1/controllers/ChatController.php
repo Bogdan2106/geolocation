@@ -3,6 +3,8 @@ namespace api\modules\v1\controllers;
 
 use common\models\Chat;
 use common\models\ChatUser;
+use common\models\Relations;
+use common\models\User;
 use Yii;
 use yii\base\Exception;
 use yii\filters\AccessControl;
@@ -43,9 +45,10 @@ class ChatController extends ActiveController
             'rules' => [
                 [
                     'actions' => [
-                        'all',
+                        'one',
                         'create',
-                        'delete'
+                        'delete',
+                        'one-chat'
                     ],
                     'allow' => true,
                     'roles' => ['@'],
@@ -56,57 +59,94 @@ class ChatController extends ActiveController
         $behaviors['verbFilter'] = [
             'class' => VerbFilter::className(),
             'actions' => [
-                'all' => ['get'],
+                'one' => ['get'],
                 'create' => ['post'],
+                'one-chat' => ['GET'],
                 'delete' => ['delete']
             ],
         ];
 
         return $behaviors;
     }
+//
+//    public function actionOneChat()
+//    {
+////        $model = Chat::findAll(Yii::$app->user->id);
+////        if($model) {
+////            return Chat::roomFields($model);
+////        }
+//
+//        $model = Chat::find()->where(['or',
+//            ['created_by' => Yii::$app->user->id],
+//            ['user_id' => Yii::$app->user->id],
+//        ])->all();
+//        return Chat::roomFields($model);
+//    }
+
 
     // get
-    // get all chat for this user
-    public function actionAll()
+    public function actionOne($id)
     {
-        $models = Chat::find()->where(['or',
-            ['created_by' => Yii::$app->user->id],
-            ['user_id' => Yii::$app->user->id],
-        ])->all();
-        //return $model;
-        if ($models) {
-            return Chat::allFields($models);
+        $user = User::findOne($id);
+
+        if (!$user) {
+            return ['errors' => 'User 404. Not found'];
         }
-        return ['error' => 'Error. No rooms'];
+
+        $isCourier = (int) Relations::find()->where([
+            'id_worker' => Yii::$app->user->id,
+            'id_courier' => $id,
+        ])->count();
+
+        if (!$isCourier) {
+            return ['errors' => "'$user->username' не ваш курьер"];
+        }
+
+        $room = Chat::find()->where(['or',
+            [
+                'created_by' => $id,
+                'user_id' => Yii::$app->user->id
+            ],
+            [
+                'created_by' => Yii::$app->user->id,
+                'user_id' => $id
+            ]
+        ])->one();
+
+        if ($room) {
+            return Chat::roomFields($room);
+        }
+
+        return ['error' => 'Error. No room'];
     }
 
     // post
     // param user_id {кого добавить в чат с текущим пользователем}
     //       name {chat name}
-    public function actionCreate()
-    {
-        $post = Yii::$app->request->post();
-        $chat = Chat::find()->where(['or',
-            [
-                'created_by' => $post['user_id'],
-                'user_id' => Yii::$app->user->id
-            ],
-            [
-                'created_by' => Yii::$app->user->id,
-                'user_id' => $post['user_id']
-            ]
-        ])->one();
-
-        if (!$chat) {
-            $chat = new Chat();
-            $chat->user_id = $post['user_id'];
-
-            if (!$chat->save()) {
-                return ['errors' => $chat->errors];
-            }
-        }
-        return true;
-    }
+//    public function actionCreate()
+//    {
+//        $post = Yii::$app->request->post();
+//        $chat = Chat::find()->where(['or',
+//            [
+//                'created_by' => $id,
+//                'user_id' => Yii::$app->user->id
+//            ],
+//            [
+//                'created_by' => Yii::$app->user->id,
+//                'user_id' => $id
+//            ]
+//        ])->one();
+//
+//        if (!$chat) {
+//            $chat = new Chat();
+//            $chat->user_id = $post['user_id'];
+//
+//            if (!$chat->save()) {
+//                return ['errors' => $chat->errors];
+//            }
+//        }
+//        return true;
+//    }
 
     // get | delete
     public function actionDelete($id)
@@ -131,29 +171,4 @@ class ChatController extends ActiveController
         }
         throw new NotFoundHttpException('The requested page does not exist.');
     }
-
-
-
-//    public function up()
-//    {
-//        $this->createIndex('relation_idx', 'relations', ['id_worker', 'id_courier'], true);
-//
-//        $this->createIndex('fk_coordinates_user_idx', '{{%coordinates}}', 'id_user');
-////
-////        $this->createIndex('fk_coordinates_user_idx', '{{%coordinates}}', 'id_user');
-////        $this->createIndex('fk_coordinates_user_idx', '{{%coordinates}}', 'id_user');
-//
-//        $this->addForeignKey('fk_coordinate_user', '{{%coordinates}}', 'id_user', '{{%user}}', 'id');
-//
-//        $this->addForeignKey('fk_relations_user_worker', '{{%relations}}', 'id_worker', '{{%user}}', 'id');
-//        $this->addForeignKey('fk_relations_user_courier', '{{%relations}}', 'id_courier', '{{%user}}', 'id');
-//    }
-//
-//    public function down()
-//    {
-//        $this->dropIndex('relation_idx', 'relations');
-//        $this->createIndex('relation_idx', 'relations', ['id_worker', 'id_courier'], true);
-//
-//        return false;
-//    }
 }
